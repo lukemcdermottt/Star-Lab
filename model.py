@@ -24,12 +24,8 @@ class baseline(nn.Module):
     
 def train_model(model, optimizer, scheduler, criterion, train_data, val_data, args):
     #getting some hyperparameters
-    batch_size = args['bz']
-    epochs = args['epoch']
-    
-    #allocating the model to the gpu
-    device = torch.device("cuda:{}".format(args['device_id']))
-    model.to(device) 
+    batch_size = 64
+    epochs = 25
 
     #inititalizing accuracies and losses lists for train and val
     train_acc, train_loss, val_acc, val_loss = [], [], [], []
@@ -41,7 +37,6 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data, ar
         #for each piece of training data
         for train_pattern in train_data:
             inputs, labels = train_pattern
-            inputs, labels = inputs.to(device), labels.to(device)
 
             optimizer.zero_grad()   #Zeroes the weight gradients
             outputs = model.forward(inputs)
@@ -68,7 +63,6 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data, ar
         epoch_loss = [] 
         for val_pattern in val_data:
             val_inputs, val_labels = val_pattern
-            val_inputs, val_labels = val_inputs.to(device), val_labels.to(device)
             
             outputs = model.forward(val_inputs)
             loss = criterion(outputs, val_labels)

@@ -1,23 +1,22 @@
-import torch
 import argparse
-import os, sys, json
 from datetime import datetime
 from model import *
-from torchvision import transforms #,models, utils
+from data import *
+from torch.optim import Adam, lr_scheduler
 
 #Hyperparameters
+"""
 parser = argparse.ArgumentParser()
+print('fine0')
+
 parser.add_argument('--log', default=1, type=int,
                     help='Determine if we log the outputs and experiment configurations to local disk')
 parser.add_argument('--path', default=datetime.now().strftime('%Y-%m-%d-%H%M%S'), type=str,
                     help='Default log output path if not specified')
-parser.add_argument('--device_id', default=0, type=int,
-                    help='the id of the gpu to use')
 parser.add_argument('--bz', default=32, type=int,
                     help='batch size')
 parser.add_argument('--epoch', default=25, type=int,
                     help='number of epochs')
-
 parser.add_argument('--criterion', default='cross_entropy', type=str,
                     help='which loss function to use')
 parser.add_argument('--optimizer', default='adam', type=str,
@@ -39,8 +38,22 @@ parser.add_argument('--step_size', default=7, type=int,
                     help='Period of learning rate decay')
 parser.add_argument('--gamma', default=0.1, type=float,
                     help='Multiplicative factor of learning rate decay.')
-
+print('fine2')
 args = vars(parser.parse_args())
+print('fine3')
+"""
 
-def main(args):
-      device = torch.device("cuda:{}".format(args['device_id']))
+def main():
+    
+    data = get_data()
+    
+    val_data = np.array([data[0][:len(data)// 5], data[1][:len(data)// 5] ])
+    train_data = np.array([data[0][len(data)// 5 :], data[1][len(data)// 5 :] ])
+
+    model = baseline()
+    criterion = nn.CrossEntropyLoss()
+    lrs = lr_scheduler.LinearLR(optimizer, total_iters=25)
+    optimizer = Adam(model.parameters(), lr = lrs)
+
+    model = train_model(model, optimizer, lrs, criterion, train_data, val_data)
+
