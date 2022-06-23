@@ -44,16 +44,13 @@ print('fine3')
 """
 
 def main():
-    
-    data = get_data()
-    
-    val_data = np.array([data[0][:len(data)// 5], data[1][:len(data)// 5] ])
-    train_data = np.array([data[0][len(data)// 5 :], data[1][len(data)// 5 :] ])
+    targets, labels = get_data()
+    val_data = targets[:len(labels) // 5], labels[:len(labels)// 5]
+    train_data = targets[len(labels) // 5 :], labels[len(labels)// 5 :]
 
     model = baseline()
     criterion = nn.CrossEntropyLoss()
+    optimizer = Adam(model.parameters(), lr = .001)
     lrs = lr_scheduler.LinearLR(optimizer, total_iters=25)
-    optimizer = Adam(model.parameters(), lr = lrs)
 
     model = train_model(model, optimizer, lrs, criterion, train_data, val_data)
-

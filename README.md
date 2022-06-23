@@ -7,4 +7,4 @@ Working on visualizing data and data augmentation. This is the main issue becaus
 Working on setting up a simple baseline of CNN to keep track of accuracies as we improve our data. I am setting up an environment, so that I can quickly edit model architectures and run experiments faster. Need to look into getting a GPU or access to the GPU clusters at UCSD.
 
 ## Current Issues:
-Neural Network is not up and running yet. Currently focusing on basic data prep to format it for the NN.
+Neural Network is not up and running yet. Currently focusing on debugging the CNN.

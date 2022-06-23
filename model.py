@@ -10,23 +10,25 @@ class baseline(nn.Module):
     def __init__(self):
         super(baseline, self).__init__()
         #define CNN structure here
-        self.conv1 = nn.Conv1d(2, 1, 2)
-        self.fc1 = nn.Linear(441,128)
-        self.fc2 = nn.Linear(128, 39)
+        self.conv1 = nn.Conv1d(64, 64, 2)
+        self.fc1 = nn.Linear(440,128)
+        self.fc2 = nn.Linear(128, 2)
 
     #Forward Propagate through NN
     def forward(self,x):
-        x = F.max_pool1d(F.relu(self.conv1(x)), (2))
+        x = F.relu(self.conv1(x))
+        #
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         return x
 
     
-def train_model(model, optimizer, scheduler, criterion, train_data, val_data, args):
+def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
     #getting some hyperparameters
     batch_size = 64
-    epochs = 25
-
+    epochs = 10
+    train_images, train_labels = train_data
+    val_images, val_labels = val_data
     #inititalizing accuracies and losses lists for train and val
     train_acc, train_loss, val_acc, val_loss = [], [], [], []
     
@@ -35,16 +37,22 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data, ar
         epoch_acc,epoch_loss = [], []   #save acc/loss across the epoch
 
         #for each piece of training data
-        for train_pattern in train_data:
-            inputs, labels = train_pattern
+        for i in range(0, len(train_images)-batch_size, batch_size):
+            #get the data
+            inputs = train_images[i:i+batch_size]
+            labels = train_labels[i:i+batch_size]
+            #convert to tensor
+            inputs = torch.from_numpy(inputs).float()
+            labels = torch.from_numpy(labels).long()
 
             optimizer.zero_grad()   #Zeroes the weight gradients
             outputs = model.forward(inputs)
+    
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             scheduler.step()
-
+        
             epoch_acc.append(np.mean(np.argmax(outputs.data.cpu().numpy(), axis=1) == labels.data.cpu().numpy()))
             epoch_loss.append(loss.item()) 
 
@@ -61,14 +69,20 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data, ar
         #Test against validation
         epoch_acc = []
         epoch_loss = [] 
-        for val_pattern in val_data:
-            val_inputs, val_labels = val_pattern
-            
-            outputs = model.forward(val_inputs)
-            loss = criterion(outputs, val_labels)
+
+        for i in range(0, len(val_images)-batch_size, batch_size):
+            #get the data
+            inputs = val_images[i:i+batch_size]
+            labels = val_labels[i:i+batch_size]
+            #convert to tensor
+            inputs = torch.from_numpy(inputs).float()
+            labels = torch.from_numpy(labels).long()
+        
+            outputs = model.forward(inputs)
+            loss = criterion(outputs, labels)
 
             epoch_loss.append(loss.item())
-            epoch_acc.append(np.mean(np.argmax(outputs.data.cpu().numpy(), axis=1) == val_labels.data.cpu().numpy()))
+            epoch_acc.append(np.mean(np.argmax(outputs.data.cpu().numpy(), axis=1) == labels.data.cpu().numpy()))
 
         #record loss & acc of validation
         val_acc.append(np.mean(epoch_acc)) 
@@ -84,7 +98,7 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data, ar
             torch.cuda.empty_cache()
             break
         
-        del val_inputs, val_labels
+        del inputs, labels
         torch.cuda.empty_cache()
 
 

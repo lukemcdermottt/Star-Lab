@@ -12,25 +12,21 @@ def get_data():
     sin_data = sin_df.iloc[:,:441].to_numpy() #np.zeros(bin_df.shape[0])])
 
     data = bin_data
-    print(type(data))
-    labels = np.zeros(bin_data.size)
+    labels = np.empty(0)
+    for i in bin_data:
+        labels = np.concatenate((labels, np.array([1,0])), axis = 0)
+    for i in sin_data:
+        sin_labels = np.concatenate((labels, np.array([0,1])), axis = 0)
     for _ in range (90):
         data = np.concatenate((data, sin_data), axis = 0)
-        labels = np.concatenate((labels, np.ones(sin_data.size)), axis = 0)
+        labels = np.concatenate((labels, sin_labels), axis = 0)
     
-
     #shuffle data
-    arr = np.arange(10)
-    np.random.shuffle(arr)
-
-    print(np.shape(data))
-    #use length of data -> i think data.size might be wrong above
-    shuffler = np.arange(20)
+    shuffler = np.arange(np.shape(data)[0])
     np.random.shuffle(shuffler)
-    print(shuffler)
-    shuffled_data = data[shuffler] #, labels[shuffler] ])
+    shuffled_data = data[shuffler], labels[shuffler]
+
     
-    print('data done')
     return shuffled_data
 
 
