@@ -49,8 +49,9 @@ def main():
     train_data = targets[len(labels) // 5 :], labels[len(labels)// 5 :]
 
     model = baseline()
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
     optimizer = Adam(model.parameters(), lr = .001)
     lrs = lr_scheduler.LinearLR(optimizer, total_iters=25)
 
     model = train_model(model, optimizer, lrs, criterion, train_data, val_data)
+    return model

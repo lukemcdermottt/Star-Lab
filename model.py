@@ -9,24 +9,20 @@ import matplotlib.pyplot as plt
 class baseline(nn.Module):
     def __init__(self):
         super(baseline, self).__init__()
-        #define CNN structure here
-        self.conv1 = nn.Conv1d(64, 64, 2)
-        self.fc1 = nn.Linear(440,128)
-        self.fc2 = nn.Linear(128, 2)
+        self.fc1 = nn.Linear(441,1)
+        self.sm = nn.Sigmoid()
 
     #Forward Propagate through NN
     def forward(self,x):
-        x = F.relu(self.conv1(x))
-        #
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = self.fc1(x)
+        x = self.sm(x)
         return x
 
     
 def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
     #getting some hyperparameters
-    batch_size = 64
-    epochs = 10
+    batch_size = 128
+    epochs = 100
     train_images, train_labels = train_data
     val_images, val_labels = val_data
     #inititalizing accuracies and losses lists for train and val
@@ -43,17 +39,20 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
             labels = train_labels[i:i+batch_size]
             #convert to tensor
             inputs = torch.from_numpy(inputs).float()
-            labels = torch.from_numpy(labels).long()
+            labels = torch.from_numpy(labels).float()
 
             optimizer.zero_grad()   #Zeroes the weight gradients
-            outputs = model.forward(inputs)
-    
+            outputs = model.forward(inputs).float()
+            #print('outputs shape:', outputs.shape, outputs.dtype)
+            #print('labels shape:', labels.shape, labels.dtype)
+            #print(outputs[:5], labels[:5])
+
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             scheduler.step()
         
-            epoch_acc.append(np.mean(np.argmax(outputs.data.cpu().numpy(), axis=1) == labels.data.cpu().numpy()))
+            epoch_acc.append(np.mean((outputs.data.cpu().numpy() -  labels.data.cpu().numpy()) < .5))
             epoch_loss.append(loss.item()) 
 
         #Save Training Loss & Accuracy after 1 run through
@@ -76,13 +75,13 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
             labels = val_labels[i:i+batch_size]
             #convert to tensor
             inputs = torch.from_numpy(inputs).float()
-            labels = torch.from_numpy(labels).long()
+            labels = torch.from_numpy(labels).float()
         
             outputs = model.forward(inputs)
             loss = criterion(outputs, labels)
 
             epoch_loss.append(loss.item())
-            epoch_acc.append(np.mean(np.argmax(outputs.data.cpu().numpy(), axis=1) == labels.data.cpu().numpy()))
+            epoch_acc.append(np.mean((outputs.data.cpu().numpy() -  labels.data.cpu().numpy()) < .5))
 
         #record loss & acc of validation
         val_acc.append(np.mean(epoch_acc)) 
@@ -90,14 +89,13 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
 
         print('Curr Val Loss', val_loss[-1])
         print('Curr Val Acc', val_acc[-1])
-
+        """
         # early stopping if the val loss goes up for two consecutive epochs
         if epoch > 5 and (val_loss[-1] > val_loss[-2]) and (val_acc[-1] > val_acc[-3]):
             print("Early stopping at epoch: ",epoch)
-            del val_inputs, val_labels
             torch.cuda.empty_cache()
             break
-        
+        """
         del inputs, labels
         torch.cuda.empty_cache()
 

@@ -12,11 +12,12 @@ def get_data():
     sin_data = sin_df.iloc[:,:441].to_numpy() #np.zeros(bin_df.shape[0])])
 
     data = bin_data
-    labels = np.empty(0)
-    for i in bin_data:
-        labels = np.concatenate((labels, np.array([1,0])), axis = 0)
-    for i in sin_data:
-        sin_labels = np.concatenate((labels, np.array([0,1])), axis = 0)
+    labels = np.array([[0]])
+    sin_labels = np.array([[1]])
+    for i in range(1, len(bin_data)):
+        labels = np.concatenate((labels, np.array([[0]])), axis = 0)
+    for i in range(1, len(sin_data)):
+        sin_labels = np.concatenate((sin_labels, np.array([[1]])), axis = 0)
     for _ in range (90):
         data = np.concatenate((data, sin_data), axis = 0)
         labels = np.concatenate((labels, sin_labels), axis = 0)
@@ -26,9 +27,10 @@ def get_data():
     np.random.shuffle(shuffler)
     shuffled_data = data[shuffler], labels[shuffler]
 
-    
+    n_zeros = np.count_nonzero(labels==[0])
+    n_ones = np.count_nonzero(labels==[1])
+    print(n_zeros, n_ones, n_zeros + n_ones)
     return shuffled_data
-
 
 
 
