@@ -9,19 +9,25 @@ import matplotlib.pyplot as plt
 class baseline(nn.Module):
     def __init__(self):
         super(baseline, self).__init__()
-        self.fc1 = nn.Linear(441,1)
+        self.conv1 = nn.Conv1d(4,1,2)
+        self.fc1 = nn.Linear(1,4)
+        self.fc2 = nn.Linear(4,16)
+        self.fc3 = nn.Linear(16,1)
         self.sm = nn.Sigmoid()
 
     #Forward Propagate through NN
     def forward(self,x):
+        x = self.conv1(x)
         x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
         x = self.sm(x)
         return x
 
     
 def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
     #getting some hyperparameters
-    batch_size = 128
+    batch_size = 4
     epochs = 100
     train_images, train_labels = train_data
     val_images, val_labels = val_data
@@ -52,7 +58,7 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
             optimizer.step()
             scheduler.step()
         
-            epoch_acc.append(np.mean((outputs.data.cpu().numpy() -  labels.data.cpu().numpy()) < .5))
+            epoch_acc.append(np.mean(((outputs.data.cpu().numpy() - labels.data.cpu().numpy())**2 < .25)))
             epoch_loss.append(loss.item()) 
 
         #Save Training Loss & Accuracy after 1 run through
@@ -81,7 +87,7 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
             loss = criterion(outputs, labels)
 
             epoch_loss.append(loss.item())
-            epoch_acc.append(np.mean((outputs.data.cpu().numpy() -  labels.data.cpu().numpy()) < .5))
+            epoch_acc.append(np.mean(((outputs.data.cpu().numpy() - labels.data.cpu().numpy())**2 < .25)))
 
         #record loss & acc of validation
         val_acc.append(np.mean(epoch_acc)) 
@@ -96,7 +102,6 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
             torch.cuda.empty_cache()
             break
         """
-        del inputs, labels
         torch.cuda.empty_cache()
 
 

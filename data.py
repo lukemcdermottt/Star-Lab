@@ -1,5 +1,6 @@
 import numpy as np 
 import pandas as pd
+from data_augmentation import *
 
 def get_data():
     #Load Dataframes
@@ -32,5 +33,46 @@ def get_data():
     print(n_zeros, n_ones, n_zeros + n_ones)
     return shuffled_data
 
+#PCA'ED DATA
+def get_PCA_Single():
+    bin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/binaries')
+    sin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/singles')
+    
+    df = sin_df.iloc[:,:441]
+    num_singles = len(df)
+    df = df.append(bin_df.iloc[:,:441])
+    df_p = pd.DataFrame(PCA(df.to_numpy()))
+    
+    singles = df_p.iloc[:num_singles,:]
+    singles.insert(2, 'spectral_type', sin_df['spectral_type'], True)
+    sin_images = singles.iloc[:,:2].to_numpy()  #use in nn
+    sin_labels = singles.iloc[:,2].to_numpy()   #use in nn
+    #Add dimeension to sin_labels
+    temp = []
+    for i in range(len(sin_images)):
+        temp.append([sin_labels[i]])
+    sin_labels = np.array(temp)
+
+    shuffler = np.arange(np.shape(sin_images)[0])
+    np.random.shuffle(shuffler)
+    shuffled_images = sin_images[shuffler], sin_labels[shuffler]
+    
+    return shuffled_images
+
+def get_m():
+    sin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/singles')
+    df = sin_df.iloc[:,:441].to_numpy() #np.zeros()
+    labels = sin_df['spectral_type']
+
+    temp = []
+    for i in range(len(labels)):
+        temp.append([labels[i]])
+    labels = np.array(temp)
+
+    shuffler = np.arange(np.shape(df)[0])
+    np.random.shuffle(shuffler)
+    shuffled_images = df[shuffler], labels[shuffler]
+    
+    return shuffled_images
 
 
