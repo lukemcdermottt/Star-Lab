@@ -9,9 +9,6 @@ import matplotlib.pyplot as plt
 class baseline(nn.Module):
     def __init__(self):
         super(baseline, self).__init__()
-        self.conv1 = nn.Conv1d(4,1,2)
-        self.fc1 = nn.Linear(1,4)
-        self.fc2 = nn.Linear(4,16)
         self.fc3 = nn.Linear(16,1)
         self.sm = nn.Sigmoid()
 

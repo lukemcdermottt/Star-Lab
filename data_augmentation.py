@@ -96,7 +96,7 @@ def plotCurrent(X, Rnk, Kmus):
 
 
 def runKMeans(K,X):
-    print('Running K Means:')
+    #print('Running K Means:')
     #load data file specified by fileString from Bishop book
     X = X
 
@@ -131,17 +131,18 @@ def runKMeans(K,X):
         Rnk = determineRnk(sqDmat)
         KmusOld = Kmus
         plotCurrent(X, Rnk, Kmus)
-        print(Rnk)
+        #print(Rnk)
         time.sleep(1)
         #recalculate mu values based on cluster assignments as per Bishop (9.4)
         Kmus = recalcMus(X, Rnk)
         #check to see if the cluster centers have converged.  If so, break.
         if np.sum(np.abs(KmusOld.reshape((-1, 1)) - Kmus.reshape((-1, 1)))) < 1e-6:
-            print(iter)
+            #print(iter)
             break
 
-    # plotCurrent(X, Rnk, Kmus)
-    return Kmus
+    
+    plotCurrent(X, Rnk, Kmus)
+    return Kmus, Rnk
 
 def calcSqDistances(X, Kmus):
   N, D = X.shape
@@ -183,7 +184,7 @@ def eigsort(V, eigvals):
         Vsort[:,i] = V[:,index[i]]
     return Vsort, Dsort
 
-def PCA(x):
+def PCA(x, dim):
   n = x.shape[0]
 
   mean = np.mean(x, axis = 0, keepdims = True)  #Avg Pattern
@@ -194,13 +195,14 @@ def PCA(x):
   sort_vec, sort_val = eigsort(e_vectors, e_values) #sort vectors based on biggest eigenvalues
 
   #debugging, delete next two lines later
-  print(sort_val.diagonal()[:10])
+  #print(sort_val.diagonal()[:10])
 
-  plt.plot(range(len(sort_val)), sort_val.diagonal()) #Print Scree Plot
-  plt.show()
+  #plt.plot(range(len(sort_val)), sort_val.diagonal()) #Print Scree Plot
+  #plt.show()
 
-  PCA_coords = x @ sort_vec[:,:2] #Apply transformaton
+  PCA_coords = x @ sort_vec[:,:dim] #Apply transformaton
 
+  """
   print('DIMENSIONS:')
   print('Cov shape:',cov.shape)
   print('E_val shape:',e_values.shape)
@@ -211,4 +213,5 @@ def PCA(x):
   print('mean shape:',mean.shape)
   print('x shape:',x.shape)
   print('PCA shape:', PCA_coords.shape)
+  """
   return PCA_coords
