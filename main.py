@@ -43,13 +43,7 @@ args = vars(parser.parse_args())
 print('fine3')
 """
 
-def main():
-    bin_data, sin_data = get_data()
-    bin_p, sin_p = reduce_dim(bin_data, sin_data)
-    #generate more data
-    sin_p = generate_data(sin_p, 3, 40000)
-    
-    images, labels = add_labels(bin_p, sin_p)
+def main(images, labels):
     #split data into train/val
     val_data = images[:len(labels) // 5], labels[:len(labels)// 5]
     train_data = images[len(labels) // 5 :], labels[len(labels)// 5 :]

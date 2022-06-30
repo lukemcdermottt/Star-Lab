@@ -21,25 +21,25 @@ def reduce_dim(bin_data, sin_data):
 
 def generate_data(data, K, amount):
     size = np.shape(data)[0]
-    clusters = 
-    gen = np.empty(0)
+    clusters = []
+    for _ in range(K):
+        clusters.append(np.array([data[0]]))
+    
     #Create Clusters
-    Kmus, Rnk = runKMeans(K, data)
+    Kmus, Rnk = runKMeans(K, data, False)
     for count in range(size):
-        print(type(data[count]))
-        clusters[np.argmax(Rnk[count])] = clusters[np.argmax(Rnk[count])].append(data[count])
-
-    print(clusters[0])
-
+        clusters[np.argmax(Rnk[count])] = np.concatenate((clusters[np.argmax(Rnk[count])], np.array([data[count]])), axis = 0)
+    
+    #Generate New Data from Cluster Distributions
+    gen = np.array([data[0]])
     for c in clusters:
-        c = np.array(c)
+        c = c[1:]
         mean = np.mean(c, axis = 0)
         cov = np.cov(c, rowvar = 0)
         new = np.random.multivariate_normal(mean, cov, int(amount/K))
         gen = np.concatenate((gen, new), axis = 0)
 
-    print('generated!')
-    return gen
+    return gen[1:]
 
 def add_labels(bin_data, sin_data):
     bin_labels = np.full((len(bin_data)),[[0]])
@@ -54,7 +54,6 @@ def add_labels(bin_data, sin_data):
     shuffled_data = data[shuffler], labels[shuffler]
 
     return shuffled_data
-
 #Lets not use this yet
 def gen_folds(data, labels, K):
     #Split data into K folds
@@ -69,6 +68,8 @@ def gen_folds(data, labels, K):
 
 
 
+
+#OLD INFO
 def get_old():
     #Load Dataframes
     bin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/binaries')
@@ -100,8 +101,6 @@ def get_old():
     print(n_zeros, n_ones, n_zeros + n_ones)
     return shuffled_data
 
-
-#PCA'ED DATA
 def get_PCA_Single():
     bin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/binaries')
     sin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/singles')
