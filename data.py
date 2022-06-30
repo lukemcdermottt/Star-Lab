@@ -1,7 +1,19 @@
 import numpy as np 
 import pandas as pd
+import torch
 from data_augmentation import *
+from torch.utils.data import Dataset, DataLoader
 
+
+class Dataset(torch.utils.data.Dataset):
+    def __init__(self, data, labels):
+        self.data = data
+        self.labels = labels
+    def __getitem__(self, index):
+        return self.data[index], self.labels[index]
+    def __len__(self):
+        return self.data.shape[0]\
+        
 def get_data():
     #Load Dataframes
     bin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/binaries')
@@ -11,7 +23,13 @@ def get_data():
     bin_data = bin_df.iloc[:,:441].to_numpy() #np.zeros(bin_df.shape[0])])
     sin_data = sin_df.iloc[:,:441].to_numpy() #np.zeros(bin_df.shape[0])])
 
-    return bin_data, sin_data
+    bin_data, sin_data  = reduce_dim(bin_data, sin_data)
+    sin_data = generate_data(sin_data, 3, 40000)
+    data, labels = add_labels(bin_data, sin_data)
+    data, labels = torch.tensor(data), torch.tensor(labels)
+    data = data.unsqueeze(1)
+
+    return split_data(data.float(), labels.float())
 
 def reduce_dim(bin_data, sin_data):
     num_bin = len(bin_data)
@@ -46,100 +64,27 @@ def add_labels(bin_data, sin_data):
     sin_labels = np.full((len(sin_data)),[[1]])
 
     data = np.concatenate((bin_data, sin_data), axis = 0)
+    norm = np.linalg.norm(data, axis = 0)
+    data = data/norm
     labels = np.concatenate((bin_labels, sin_labels), axis = 0)
-    
-    #shuffle data
-    shuffler = np.arange(np.shape(data)[0])
-    np.random.shuffle(shuffler)
-    shuffled_data = data[shuffler], labels[shuffler]
+    return data, labels
 
-    return shuffled_data
-#Lets not use this yet
+def split_data(data, labels):
+    #shuffle labels
+    idx = np.arange(len(labels))
+    np.random.shuffle(idx)
+    data = data[idx]
+    labels = labels[idx]
+
+    train_data = data[:int(len(data)*0.8)]
+    train_labels = labels[:int(len(labels)*0.8)]
+    val_data = data[int(len(data)*0.8):]
+    val_labels = labels[int(len(labels)*0.8):]
+
+    return train_data, train_labels, val_data, val_labels
+
+
+
+#Will use later
 def gen_folds(data, labels, K):
-    #Split data into K folds
-    n = np.shape(data)[0]
-    n_per_fold = int(n/K)
-    folds = []
-    for i in range(K):
-        idx_start = i*n_per_fold
-        idx_end = (i+1)*n_per_fold
-        folds.append((data[idx_start : idx_end], labels[idx_start : idx_end]))
-    return folds
-
-
-
-
-#OLD INFO
-def get_old():
-    #Load Dataframes
-    bin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/binaries')
-    sin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/singles')
-    #wav_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/wavegrid')
-
-    #Prep data for NN
-    bin_data = bin_df.iloc[:,:441].to_numpy() #np.zeros(bin_df.shape[0])])
-    sin_data = sin_df.iloc[:,:441].to_numpy() #np.zeros(bin_df.shape[0])])
-
-    data = bin_data
-    labels = np.array([[0]])
-    sin_labels = np.array([[1]])
-    for i in range(1, len(bin_data)):
-        labels = np.concatenate((labels, np.array([[0]])), axis = 0)
-    for i in range(1, len(sin_data)):
-        sin_labels = np.concatenate((sin_labels, np.array([[1]])), axis = 0)
-    for _ in range (90):
-        data = np.concatenate((data, sin_data), axis = 0)
-        labels = np.concatenate((labels, sin_labels), axis = 0)
-    
-    #shuffle data
-    shuffler = np.arange(np.shape(data)[0])
-    np.random.shuffle(shuffler)
-    shuffled_data = data[shuffler], labels[shuffler]
-
-    n_zeros = np.count_nonzero(labels==[0])
-    n_ones = np.count_nonzero(labels==[1])
-    print(n_zeros, n_ones, n_zeros + n_ones)
-    return shuffled_data
-
-def get_PCA_Single():
-    bin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/binaries')
-    sin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/singles')
-    
-    df = sin_df.iloc[:,:441]
-    num_singles = len(df)
-    df = df.append(bin_df.iloc[:,:441])
-    df_p = pd.DataFrame(PCA(df.to_numpy()))
-    
-    singles = df_p.iloc[:num_singles,:]
-    singles.insert(2, 'spectral_type', sin_df['spectral_type'], True)
-    sin_images = singles.iloc[:,:2].to_numpy()  #use in nn
-    sin_labels = singles.iloc[:,2].to_numpy()   #use in nn
-    #Add dimeension to sin_labels
-    temp = []
-    for i in range(len(sin_images)):
-        temp.append([sin_labels[i]])
-    sin_labels = np.array(temp)
-
-    shuffler = np.arange(np.shape(sin_images)[0])
-    np.random.shuffle(shuffler)
-    shuffled_images = sin_images[shuffler], sin_labels[shuffler]
-    
-    return shuffled_images
-
-def get_m():
-    sin_df = pd.read_hdf('/Users/lukemcdermott/Desktop/Physics/spectral_templates_data_version_june20.h5', key = '/singles')
-    df = sin_df.iloc[:,:441].to_numpy() #np.zeros()
-    labels = sin_df['spectral_type']
-
-    temp = []
-    for i in range(len(labels)):
-        temp.append([labels[i]])
-    labels = np.array(temp)
-
-    shuffler = np.arange(np.shape(df)[0])
-    np.random.shuffle(shuffler)
-    shuffled_images = df[shuffler], labels[shuffler]
-    
-    return shuffled_images
-
-
+    return data

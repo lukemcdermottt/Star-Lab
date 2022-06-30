@@ -9,22 +9,35 @@ import matplotlib.pyplot as plt
 class baseline(nn.Module):
     def __init__(self):
         super(baseline, self).__init__()
-        self.fc3 = nn.Linear(16,1)
-        self.sm = nn.Sigmoid()
+        self.conv1 = nn.Conv1d(1, 64, kernel_size=1)
+        self.conv2 = nn.Conv1d(64, 128, kernel_size = 1)
+        self.drop1 = nn.Dropout(.5)
+        self.mp1 = nn.MaxPool1d(kernel_size=1)
+        self.fc1 = nn.Linear(256, 32)
+        self.fc2 = nn.Linear(32, 1)
+        self.ReLU = nn.ReLU()
+        self.Sigmoid = nn.Sigmoid()
+
 
     #Forward Propagate through NN
     def forward(self,x):
         x = self.conv1(x)
-        x = self.fc1(x)
-        x = self.fc2(x)
-        x = self.fc3(x)
-        x = self.sm(x)
+        x = self.ReLU(x)
+        x = self.conv2(x)
+        x = self.ReLU(x)
+        x = self.drop1(x)
+        x = self.mp1(x)
+        x = torch.flatten(x, start_dim = 1)
+        x = self.ReLU(self.fc1(x))
+        x = self.Sigmoid(self.fc2(x))
+
         return x
 
-    
+
+"""
 def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
     #getting some hyperparameters
-    batch_size = 4
+    batch_size = 2
     epochs = 100
     train_images, train_labels = train_data
     val_images, val_labels = val_data
@@ -37,14 +50,16 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
 
         #for each piece of training data
         for i in range(0, len(train_images)-batch_size, batch_size):
-            #get the data
+            optimizer.zero_grad()   #Zeroes the weight gradients
+
             inputs = train_images[i:i+batch_size]
             labels = train_labels[i:i+batch_size]
-            #convert to tensor
             inputs = torch.from_numpy(inputs).float()
             labels = torch.from_numpy(labels).float()
-
-            optimizer.zero_grad()   #Zeroes the weight gradients
+            
+            inputs = inputs.unsqueeze(1)
+            print(inputs.shape, labels.shape)
+            
             outputs = model.forward(inputs).float()
             #print('outputs shape:', outputs.shape, outputs.dtype)
             #print('labels shape:', labels.shape, labels.dtype)
@@ -65,9 +80,6 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
         print('Curr Train Loss', train_loss[-1])
         print('Curr Train Acc', train_acc[-1])
 
-        del inputs, labels
-        torch.cuda.empty_cache()
-
         #Test against validation
         epoch_acc = []
         epoch_loss = [] 
@@ -80,6 +92,8 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
             inputs = torch.from_numpy(inputs).float()
             labels = torch.from_numpy(labels).float()
         
+            inputs = inputs.unsqueeze(1)
+
             outputs = model.forward(inputs)
             loss = criterion(outputs, labels)
 
@@ -92,14 +106,7 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
 
         print('Curr Val Loss', val_loss[-1])
         print('Curr Val Acc', val_acc[-1])
-        """
-        # early stopping if the val loss goes up for two consecutive epochs
-        if epoch > 5 and (val_loss[-1] > val_loss[-2]) and (val_acc[-1] > val_acc[-3]):
-            print("Early stopping at epoch: ",epoch)
-            torch.cuda.empty_cache()
-            break
-        """
-        torch.cuda.empty_cache()
+        
 
 
     #Plot Loss & Accuracy of Train/Val over each epochs
@@ -112,12 +119,7 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
     #plt.savefig("./resnet_plots_bz=32_lr=1e-5/train-accuracy.png")
     #plt.close()
 
-    plt.figure()
-    plt.title('loss over epochs')
-    plt.plot(val_loss, label=f'validation loss')
-    plt.plot(train_loss, label=f'training loss')
-    plt.legend()
-    plt.show()
+
     #plt.savefig("resnet_plots_bz=32_lr=1e-5/train-loss.png")
 
     print()
@@ -127,3 +129,4 @@ def train_model(model, optimizer, scheduler, criterion, train_data, val_data):
     print('Final losses:', train_loss, val_loss)
 
     return model # return the model with weight selected by best performance
+"""
