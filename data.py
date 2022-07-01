@@ -23,18 +23,17 @@ def get_data():
     bin_data = bin_df.iloc[:,:441].to_numpy() #np.zeros(bin_df.shape[0])])
     sin_data = sin_df.iloc[:,:441].to_numpy() #np.zeros(bin_df.shape[0])])
 
-    bin_data, sin_data  = reduce_dim(bin_data, sin_data)
+    bin_data, sin_data  = reduce_dim(bin_data, sin_data, 256)
     sin_data = generate_data(sin_data, 3, 40000)
     data, labels = add_labels(bin_data, sin_data)
     data, labels = torch.tensor(data), torch.tensor(labels)
-    data = data.unsqueeze(1)
-
+    data = data.reshape(data.shape[0], 1, 16, 16)
     return split_data(data.float(), labels.float())
 
-def reduce_dim(bin_data, sin_data):
+def reduce_dim(bin_data, sin_data, dim):
     num_bin = len(bin_data)
     data = np.concatenate((bin_data, sin_data), axis = 0)
-    data_p = PCA(data, 2)
+    data_p = PCA(data, dim)
     return data_p[:num_bin], data_p[num_bin:]
 
 def generate_data(data, K, amount):
@@ -78,12 +77,11 @@ def split_data(data, labels):
 
     train_data = data[:int(len(data)*0.8)]
     train_labels = labels[:int(len(labels)*0.8)]
+    print(train_data.shape[0])
     val_data = data[int(len(data)*0.8):]
     val_labels = labels[int(len(labels)*0.8):]
 
     return train_data, train_labels, val_data, val_labels
-
-
 
 #Will use later
 def gen_folds(data, labels, K):

@@ -9,29 +9,20 @@ import matplotlib.pyplot as plt
 class baseline(nn.Module):
     def __init__(self):
         super(baseline, self).__init__()
-        self.conv1 = nn.Conv1d(1, 64, kernel_size=1)
-        self.conv2 = nn.Conv1d(64, 128, kernel_size = 1)
-        self.drop1 = nn.Dropout(.5)
-        self.mp1 = nn.MaxPool1d(kernel_size=1)
-        self.fc1 = nn.Linear(256, 32)
-        self.fc2 = nn.Linear(32, 1)
-        self.ReLU = nn.ReLU()
-        self.Sigmoid = nn.Sigmoid()
+        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
+        self.fc1 = nn.Linear(320, 50)
+        self.fc2 = nn.Linear(50, 1)
+        self.sm = nn.Sigmoid()
 
-
-    #Forward Propagate through NN
-    def forward(self,x):
-        x = self.conv1(x)
-        x = self.ReLU(x)
-        x = self.conv2(x)
-        x = self.ReLU(x)
-        x = self.drop1(x)
-        x = self.mp1(x)
-        x = torch.flatten(x, start_dim = 1)
-        x = self.ReLU(self.fc1(x))
-        x = self.Sigmoid(self.fc2(x))
-
-        return x
+    def forward(self, x):
+        x = F.relu(F.max_pool2d(self.conv1(x), 2))
+        x = F.relu(F.max_pool2d((self.conv2(x)), 2))
+        x = x.view(-1, 320)
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
+        x = self.fc2(x)
+        return self.sm(x)
 
 
 """
