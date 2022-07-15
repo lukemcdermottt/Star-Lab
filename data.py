@@ -12,7 +12,7 @@ class Dataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         return self.data[index], self.labels[index]
     def __len__(self):
-        return self.data.shape[0]\
+        return self.data.shape[0]
         
 def get_data():
     #Load Dataframes
@@ -27,6 +27,8 @@ def get_data():
     sin_data = generate_data(sin_data, 3, 40000)
     data, labels = add_labels(bin_data, sin_data)
     data, labels = torch.tensor(data), torch.tensor(labels)
+
+    #Reshape into 16x16 image
     data = data.reshape(data.shape[0], 1, 16, 16)
     return split_data(data.float(), labels.float())
 
@@ -66,6 +68,12 @@ def add_labels(bin_data, sin_data):
     norm = np.linalg.norm(data, axis = 0)
     data = data/norm
     labels = np.concatenate((bin_labels, sin_labels), axis = 0)
+    
+    #Shuffle labels
+    idx = np.arange(len(labels))
+    np.random.shuffle(idx)
+    data = data[idx]
+    labels = labels[idx]
     return data, labels
 
 def split_data(data, labels):
